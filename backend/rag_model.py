@@ -21,7 +21,7 @@ print(f"🌍 Environnement Pinecone: {PINECONE_ENV}")
 # -------------------------
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
-index_name = "lab-rag-index"
+index_name = "insurance"
 
 # Vérifier si l'index existe, sinon le créer
 if index_name not in pc.list_indexes().names():
@@ -32,7 +32,7 @@ if index_name not in pc.list_indexes().names():
         metric="cosine",
         spec=ServerlessSpec(
             cloud="aws",
-            region="eu-west-1"  # Changez selon votre région
+            region="us-east-1"  # Changez selon votre région
         )
     )
 else:
@@ -79,14 +79,14 @@ print("✅ Modèle chargé avec succès!")
 # -------------------------
 # Your RAG Pipeline
 # -------------------------
-def RAG_Solution(query: str):
+def RAG_Solution(query: str, temperature: float = 0.2):
     try:
         # Gestion des salutations plus robuste
         clean_query = query.lower().strip()
         greetings = ["hi", "hello", "bonjour", "salut", "hey", "bonsoir", "hii", "helo"]
         
         if any(clean_query == g or clean_query.startswith(g + " ") for g in greetings) and len(clean_query) < 15:
-            return "Hello! I am your Medical AI Assistant. How can I help you today?"
+            return "Hello! I'm AssurBot, your AI insurance advisor. I can help you find the perfect coverage bundle based on your profile — age, family size, budget, lifestyle, and risk preferences. Just tell me about yourself and I'll match you with the best plan!"
     
         print(f"🔍 Recherche pour: {query}")
         
@@ -97,10 +97,30 @@ def RAG_Solution(query: str):
         print(f"📚 Contexte trouvé: {len(docs)} documents")
 
         # 2️⃣ Prompt
-        prompt = f"""You are a helpful medical AI assistant.
-Answer with the context you are provided . If the answer cannot be found in the context, say "I cannot find this information in the provided context , if the user greets you or asks you greeting questions answer thelm with a greeting and if the user asks you to introduce yourself answer them with a short introduction of yourself. Answer with the language the user asks you with
-Do NOT answer questions that are not related to the medical field, if the user asks you a question that is not related to the medical field answer them with "I am sorry but I can only answer questions related to the medical field
-ALWAYS add you should consider consulting a healthcare professional for personalized advice and treatment options at the end of your answer"
+        prompt = f"""You are a helpful AI insurance advisor.
+Your role is to help clients find the best Purchased Coverage Bundle (classes 0–9) based on their demographic and behavioral profile , if you were asked out of these themes just say , i am not allowed to answer non related insurance questions.
+
+Available bundles:
+- Bundle 0 (BH-001): Basic Health — $89/mo, $250K coverage, essential medical
+- Bundle 1 (HDV-002): Health + Dental + Vision — $154/mo, $400K coverage
+- Bundle 2 (FC-003): Family Comprehensive — $298/mo, $800K coverage
+- Bundle 3 (PHL-004): Premium Health & Life — $421/mo, $2M coverage
+- Bundle 4 (AL-005): Auto Liability Basic — $67/mo, $100K coverage
+- Bundle 5 (AC-006): Auto Comprehensive — $189/mo, $500K coverage
+- Bundle 6 (HS-007): Home Standard — $112/mo, $350K coverage
+- Bundle 7 (HP-008): Home Premium — $234/mo, $1.2M coverage
+- Bundle 8 (RB-009): Renter's Basic — $29/mo, $25K coverage
+- Bundle 9 (RP-010): Renter's Premium — $79/mo, $80K coverage
+
+Rules:
+1. When a user describes their profile (age, income, family, lifestyle, needs), recommend the BEST matching bundle with reasoning.
+2. Always mention the bundle number (0–9) and name in your recommendation.
+3. Use the context provided to support your answer with data patterns.
+4. If the user asks general insurance questions, answer helpfully using the context.
+5. If the question is not related to insurance, say: "I can only help with insurance-related questions."
+6. Answer in the same language the user uses.
+7. Keep answers concise, structured, and actionable.
+8. End with: 'For personalized insurance advice, please consult a licensed insurance professional.'
 
 Context:
 {context}
@@ -120,8 +140,8 @@ Answer:"""
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=300,
-                temperature=0.2,
-                do_sample=True,
+                temperature=temperature,
+                do_sample=temperature > 0,
                 pad_token_id=tokenizer.pad_token_id,
                 eos_token_id=tokenizer.eos_token_id
             )

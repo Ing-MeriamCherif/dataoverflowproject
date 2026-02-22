@@ -26,7 +26,7 @@ def get_db():
 
 @app.post("/rag", response_model=ChatResponse)
 def chat(request: ChatRequest, db: Session = Depends(get_db)):
-    answer = RAG_Solution(request.question)
+    answer = RAG_Solution(request.question, temperature=request.temperature)
     chat_entry = ChatHistory(
         user_message=request.question,
         ai_response=answer
