@@ -12,7 +12,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")  # ← CORRECT
 if DATABASE_URL is None:
     print("ERREUR: DATABASE_URL n'est pas définie dans le fichier .env")
     print("Utilisation de la valeur par défaut...")
-    DATABASE_URL = "mysql+pymysql://root:lahmerkun1234@localhost:3306/application"
+    DATABASE_URL = ""
 
 print(f"Connexion à la base de données: {DATABASE_URL}")
 
